@@ -25,6 +25,19 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         
         myTable.insertSubview(refreshControl, at: 0)
         
+        self.navigationItem.title = "TUMBLR: Photo Collection"
+        if let navigationBar = navigationController?.navigationBar {
+            navigationBar.tintColor = UIColor(red: 1.0, green: 0.25, blue: 0.25, alpha: 0.8)
+            
+            let shadow = NSShadow()
+            shadow.shadowColor = UIColor.gray.withAlphaComponent(0.5)
+            shadow.shadowBlurRadius = 4
+            navigationBar.titleTextAttributes = [
+                NSAttributedStringKey.foregroundColor : UIColor(red: 0.8, green: 0.15, blue: 0.15, alpha: 0.8),
+                NSAttributedStringKey.shadow : shadow
+            ]
+        }
+        
         myTable.delegate = self
         myTable.dataSource = self
         fetchData()
@@ -103,10 +116,10 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
         session.configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         let task = session.dataTask(with: url) { (data, response, error) in
             if let error = error {
-                print(error.localizedDescription)
+             //   print(error.localizedDescription)
             } else if let data = data,
                 let dataDictionary = try! JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                print(dataDictionary)
+              //  print(dataDictionary)
                 
                 // TODO: Get the posts and store in posts property
                 
@@ -121,6 +134,61 @@ class PhotosViewController: UIViewController, UITableViewDataSource, UITableView
             }
         }
         task.resume()
+        
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        let vc = segue.destination as! PhotoDetailsViewController
+        let cell = sender as! UITableViewCell
+        let indexPath = myTable.indexPath(for: cell)!
+        
+        
+        let post = posts[indexPath.row]
+        
+        if let photos = post["photos"] as? [[String: Any]] {
+            // photos is NOT nil, we can use it!
+            // TODO: Get the photo url
+            
+            let photo = photos[0]
+            // 2.
+            let originalSize = photo["original_size"] as! [String: Any]
+            // 3.
+            let urlString = originalSize["url"] as! String
+            //print(urlString)
+            if urlString != nil{
+                let url = URL(string: urlString)
+                if let  url = url {
+                    print("**************\(url)")
+//                   vc.myImage.af_setImage(withURL: url)
+                    
+                   // vc.url = urlString
+                    URLSession.shared.dataTask(with: url) { (data,response,error)
+                        in
+                        
+                        indexPath
+                        
+                        if let err = error{
+                            print("Here is my error:",error)
+                        }
+                        guard let imagedata = data else {return}
+                        let image = UIImage(data: imagedata)
+                        
+                        DispatchQueue.main.async {
+                        vc.myImage.image = image
+                        }
+                        
+                        
+                        
+                    }.resume()
+                }
+                
+                
+                
+            }
+            // 4.
+           
+        }
         
     }
     
